@@ -1,0 +1,604 @@
+#include "movie_simulation_program_3.h"
+
+/*********************************************************************
+string promptForFilename()
+Purpose:
+    Helper function ask the user for a valid file path
+Parameters:
+    -
+Return Value:
+    Valid filepath string
+Notes:
+    -
+*********************************************************************/
+
+
+string promptForFilename()
+{
+    string filepath_string;
+    do
+    {
+    
+    cout << "Please enter file path: ";
+    cin>>filepath_string;
+    
+    if(filepath_string == "EXIT")
+    {
+        break;
+    }
+    
+    int filesize = filepath_string.length();
+
+    for(int i=0; i<filesize; i++){
+    if(filepath_string.at(i) == ' '){
+    cout<<"Please Enter a Valid File Path.";
+    continue;
+    }
+    }
+    
+    if((filesize>4) && (filepath_string[filesize-1] == 't') && (filepath_string[filesize-2] == 'x') && (filepath_string[filesize-3] == 't') && (filepath_string[filesize-4] == '.'))
+    {  
+        break;
+    }
+
+    else {
+        cout<<"Please Enter a Valid File Path."<<endl;
+        continue;
+    }
+    
+        
+    }while(filepath_string != "EXIT");
+    return filepath_string;
+}
+    
+
+/*********************************************************************
+void processTheaterInformation(fstream& fileInput, Theater& myTheater)
+Purpose:
+    Function to read theater text file and process the information
+    into a theater structure
+Parameters:
+    I/O fstream fileInput   File stream to read theater info
+    I/O Theater myTheater   Theater structure to populate
+Return Value:
+    -
+Notes:
+    This function does not validate the file structure it is provided
+*********************************************************************/
+void processTheaterInformation(fstream& fileInput, Theater& myTheater)
+{
+    string file_path;
+    file_path = promptForFilename();
+    if(file_path == "EXIT")
+    {
+        cout<<"Exiting function due to early exiting of file prompt";
+        return;
+    }
+    else{
+        string skip;
+        fileInput.open(file_path);
+        if(!fileInput){
+            promptForFilename();
+        }
+        getline(fileInput, myTheater.szName); 
+        fileInput>>myTheater.iNumberScreens;
+
+        fileInput.ignore();
+        getline(fileInput, skip);
+ 
+        for (int i = 0; i < myTheater.iNumberScreens; i++){ 
+            fileInput>>myTheater.roomsArr[i].szName;
+            fileInput>>myTheater.roomsArr[i].iParkingCapacity;
+            myTheater.roomsArr[i].iParkingAvailable = myTheater.roomsArr[i].iParkingCapacity;
+            fileInput>>myTheater.roomsArr[i].szMovieShowing;
+            
+            for(int j=0; j< myTheater.roomsArr[i].szMovieShowing.size(); j++)
+            {
+             if(myTheater.roomsArr[i].szMovieShowing.at(j) == '_'){
+              myTheater.roomsArr[i].szMovieShowing.at(j) = ' ';
+            }
+          }
+        }
+
+        fileInput.ignore();
+        getline(fileInput, skip);
+        
+        for(int i=0; i<5; i++){
+            fileInput>>myTheater.dPricingArr[i];
+        }
+    }
+// cout<<szBreakMessage<<endl;
+
+        fileInput.close();
+        }
+
+/*********************************************************************
+void displayMenu(string szMenuName, string szChoicesArr[], int iChoices)
+Purpose:
+    Function to display the menu choices of a provided menu
+Parameters:
+    I   string szMenuName       Title of the displayed menu
+    I   string szChoicesArr     Menu choices to be displayed
+    I   int iChoices            Number of menu choices    
+Return Value:
+    -
+Notes:
+    Menu options are displayed starting at 1
+    The last menu option should always be displayed as -1
+*********************************************************************/
+void displayMenu(string szMenuName, string szChoicesArr[], int iChoices)
+{
+    cout<<szMenuName<<endl;
+    cout<<szBreakMessage;
+    int SpecialIndex;
+    for(SpecialIndex=0; SpecialIndex<iChoices-1; SpecialIndex++){
+        cout<<SpecialIndex+1<<". "<<szChoicesArr[SpecialIndex]<<endl;
+    }
+    cout<<-1<<". "<<szChoicesArr[SpecialIndex];
+
+        cout<<endl;
+    cout<<szBreakMessage<<endl;
+}
+
+/*********************************************************************
+void displayTheaterInfo(const Theater myTheater)
+Purpose:
+    Function to display basic theater information
+Parameters:
+    I   Theater myTheater   Populated Theater info   
+Return Value:
+    -
+Notes:
+    -
+*********************************************************************/
+void displayTheaterInfo(const Theater myTheater)
+{
+    cout<<"\nTheatre Information"<<endl;
+    cout<<szBreakMessage;
+    cout << myTheater.szName << endl;
+    cout<< myTheater.iNumberScreens <<endl;
+    int iTotalSeats =0;
+    for(int i=0; i<myTheater.iNumberScreens; i++){
+iTotalSeats += myTheater.roomsArr[i].iParkingCapacity; 
+    }
+    cout<<"Total seats: "<<iTotalSeats<<endl;
+    cout<<szBreakMessage;
+}
+
+/*********************************************************************
+void displayNowShowing(const Theater myTheater)
+Purpose:
+    Function to display all movies currently showing
+Parameters:
+    I   Theater myTheater   Populated Theater info   
+Return Value:
+    -
+Notes:
+    Movies are displayed starting at 0
+*********************************************************************/
+void displayNowShowing( Theater myTheater)
+{
+            cout<<"\n Now Showing "<<endl;
+            cout<<szBreakMessage;
+    for(int i=0; i<myTheater.iNumberScreens; i++){
+        
+        // for(int j=0; j< myTheater.roomsArr[i].szMovieShowing.size(); j++){
+        //  if(myTheater.roomsArr[i].szMovieShowing.at(j) == '_'){
+        //     myTheater.roomsArr[i].szMovieShowing.at(j) = ' ';
+            
+        //  }
+        //  //cout<<i<<". " << myTheater.roomsArr[i].szMovieShowing << endl;
+        // }
+      cout<<i<<". " << myTheater.roomsArr[i].szMovieShowing << endl;
+    }
+    
+}
+
+/*********************************************************************
+CustomerTicket buyTickets(Theater& myTheater)
+Purpose:
+    Function to handle customer buying tickets
+Parameters:
+    I/O Theater myTheater       Populated Theater info
+Return Value:
+    Populated CustomerTicket if transaction was successful
+    Empty Customer Ticker if transaction was unsuccessful
+Notes:
+    -
+*********************************************************************/
+
+
+CustomerTicket buyTickets(Theater& myTheater)
+{
+    CustomerTicket tempCust;
+    int SelectedChoice=0;
+
+    // Prompting and storing the name
+    cout << "Enter Customer Name: ";
+    cin >> tempCust.szName;
+
+     // Check if the customer has already purchased a ticket
+    for (int i = 0; i < myTheater.iCurrentCustomers; i++) {
+        if (myTheater.customersArr[i].szName == tempCust.szName) {
+            cout << "You are only allowed 1 ticket purchase per account." << endl;
+            tempCust.szName = "";
+            return tempCust;
+        }
+    }
+
+    // Check if the customer is a member
+    for (int i = 0; i < myTheater.iCurrentMembers; i++) {
+        if (tempCust.szName == myTheater.membersArr[i].szName) {
+            cout << "Welcome back " << tempCust.szName << endl;
+            tempCust.bBoughtMembership = true;
+            break;
+        }
+    }
+
+    // If not a member, ask to become one
+    if (!tempCust.bBoughtMembership) {
+        char membershipChoice;
+        cout << "Would you like to become a member(Y/N): ";
+        cin >> membershipChoice;
+        
+
+        if (membershipChoice == 'Y' || membershipChoice == 'y') {
+            myTheater.membersArr[myTheater.iCurrentMembers].szName = tempCust.szName;
+            //myTheater.customersArr[myTheater.iCurrentCustomers].szName = tempCust.szName;
+            tempCust.bBoughtMembership = true;
+            myTheater.iCurrentMembers++;
+
+            do{
+             displayNowShowing(myTheater);
+             cout << "\nWhich movie would you like to see: ";
+             cin >> SelectedChoice;
+             // Prompt for number of tickets
+             cout << "Movie location: " << myTheater.roomsArr[SelectedChoice].szName << endl;
+             cout << "Seats Remaining: " << myTheater.roomsArr[SelectedChoice].iParkingAvailable << endl;
+
+            // Check if selected movie is sold out
+             if (myTheater.roomsArr[SelectedChoice].iParkingAvailable == 0) {
+                cout << "Sorry, the movie is already sold out. Please make a new selection." << endl;
+                tempCust.szName = "";
+                continue;
+             }
+             else{
+                 break;
+             }
+            }while(true);
+
+            
+            cout << "\n# of member tickets: ";
+            cin >>tempCust.iNumberTickets;
+            
+            if(tempCust.iNumberTickets == 0 ||  tempCust.iNumberTickets > myTheater.roomsArr[SelectedChoice].iParkingAvailable)
+             {
+                cout<<"Please make sure you order at least one ticket and not over the availability.";
+                tempCust.szName = "";
+                return tempCust;
+             }
+            
+            myTheater.roomsArr[SelectedChoice].iParkingAvailable -= tempCust.iNumberTickets;
+                
+            tempCust.szMovie = myTheater.roomsArr[SelectedChoice].szMovieShowing;
+                
+            tempCust.dPurchaseCost = (tempCust.iNumberTickets*(myTheater.dPricingArr[3]) + (myTheater.dPricingArr[4]))*(1 + dSALES_TAX);
+            cout<<fixed<<setprecision(2)<<"Total price: $"<< tempCust.dPurchaseCost<<endl<<szBreakMessage;
+            
+        } 
+        
+        else {
+            //myTheater.customersArr[myTheater.iCurrentCustomers].szName = tempCust.szName;
+            tempCust.bBoughtMembership = false;
+
+            do{
+             displayNowShowing(myTheater);
+             cout << "\nWhat movie would you like to see? " << endl;
+             cin >> SelectedChoice;
+             // Prompt for number of tickets
+             cout << "Movie location:" << myTheater.roomsArr[SelectedChoice].szName << endl;
+             cout << "Seats Remaining: " << myTheater.roomsArr[SelectedChoice].iParkingAvailable << endl;
+
+            // Check if selected movie is sold out
+             if (myTheater.roomsArr[SelectedChoice].iParkingAvailable == 0) {
+                cout << "Sorry, the movie is already sold out. Please make a new selection." << endl;
+                tempCust.szName = "";
+                continue;
+             }
+             else{
+                 break;
+             }
+            }while(true);
+
+            int iNumberChildTickets;
+            int iNumberSeniorTickets;
+            int iNumberAdultickets;
+
+
+            cout << "\n# of adult tickets: ";
+            cin >>iNumberAdultickets;
+
+            cout << "# of senior tickets: ";
+            cin >>iNumberSeniorTickets;
+
+            cout << "# of child tickets: ";
+            cin >>iNumberChildTickets;
+
+             int iTotalnoticks = iNumberAdultickets + iNumberSeniorTickets + iNumberChildTickets;
+ 
+            if( iTotalnoticks = 0 || iTotalnoticks > myTheater.roomsArr[SelectedChoice].iParkingAvailable)
+             {
+                cout<<"Please make sure you order at least one ticket and not over the availability.";
+                tempCust.szName = "";
+                return tempCust;
+             }
+            
+            myTheater.roomsArr[SelectedChoice].iParkingAvailable -= iTotalnoticks;
+                
+            tempCust.szMovie = myTheater.roomsArr[SelectedChoice].szMovieShowing;
+                
+            tempCust.dPurchaseCost = ((iNumberAdultickets*myTheater.dPricingArr[0]) + (iNumberSeniorTickets*myTheater.dPricingArr[1]) + (iNumberChildTickets*myTheater.dPricingArr[2]))*(1 + dSALES_TAX);
+            cout<<fixed<<setprecision(2)<<"Total price: $"<< tempCust.dPurchaseCost<<endl<<szBreakMessage;
+            
+        } 
+        
+    }
+    return tempCust;
+}
+
+
+
+
+
+
+
+// Extra Credit Function
+
+/*********************************************************************
+refundTickets(Theater& myTheater)
+Purpose:
+    To refund tickets of the customers
+Parameters:
+    I Theater& myTheater
+    O Void Function with no return value. It prints refund details of the customers in the screen, subtracts it from the file, and returns membership cost + sales tax
+    I/O Modified. 
+Return Value:
+    No return value.
+Notes:
+    
+*********************************************************************/
+
+
+
+void refundTickets(Theater& myTheater)
+{
+    string UserName;
+    char RefundChoice;
+    cout<<"\n Refunding Tickets."<<endl;
+    cout<<szBreakMessage;
+    cout << "Enter Customer name: ";
+    cin>>UserName;
+    cout<<"\nCustomer Information"<<endl;
+    for(int i=0; i<100; i++){
+        if(UserName == myTheater.customersArr[i].szName)
+        {
+        cout<<"Name: " <<myTheater.customersArr[i].szName<<endl;
+        cout<<"Movie: " <<myTheater.customersArr[i].szMovie<<endl;
+        cout<<"# of tickets: " <<myTheater.customersArr[i].iNumberTickets<<endl;
+        cout<<"Cost: $" <<myTheater.customersArr[i].dPurchaseCost<<endl;
+          if(myTheater.customersArr[i].bBoughtMembership == true){
+              cout<<"\nPlease note: The membership fee cannot be refunded. "<<endl;
+          }
+          cout<<"Would you like to refund this purchase? ";
+          cin>>RefundChoice;
+          if(RefundChoice == 'Y' || RefundChoice == 'y'){
+              //double temp = calculateTotalSales(myTheater);
+
+             //temp -= myTheater.customersArr[i].dPurchaseCost;
+            myTheater.customersArr[i].szName = ""; // Clear customer data
+            myTheater.customersArr[i].szMovie = "";
+            myTheater.customersArr[i].iNumberTickets = 0;
+            myTheater.customersArr[i].dPurchaseCost = myTheater.dPricingArr[4] *(1+dSALES_TAX) ;
+            cout<<"\nYour purchase have been refunded. \n"<<szBreakMessage<<endl;
+          }
+          else {
+              cout<<"Refund Cancelled";
+          return ;
+          }
+        }
+        else(cout<<"\nNo customer found")<<"\n"<<szBreakMessage<<endl;
+        return ;
+    }
+}
+
+/*********************************************************************
+double calculateTotalSales(const Theater& myTheater)
+Purpose:
+    Function to calculate the total sales of the theater
+Parameters:
+    I   Theater myTheater       Populated Theater info
+Return Value:
+    Total sales
+Notes:
+    This function should only be called by the admin
+*********************************************************************/
+double calculateTotalSales(const Theater& myTheater)
+{
+    double totsales = 0;
+    for(int i=0; i< myTheater.iCurrentCustomers; i++){
+totsales += myTheater.customersArr[i].dPurchaseCost;
+    }
+    return totsales;
+}
+
+/*********************************************************************
+void storeData(const Theater myTheater, fstream& fileMemberIO, string szMode);
+Purpose:
+    Function to load data from the theater structure to a file
+Parameters:
+    I/O Theater& myTheater          Populated Theater info
+    I/O fstream fileDataIO          File stream used to read file
+    I   string szMode               What data to delete
+Return Value:
+    -
+Notes:
+    -
+*********************************************************************/
+void storeData(const Theater myTheater, fstream& fileDataIO, string szMode)
+{
+
+    string temp;
+    if (szMode != "Customers" && szMode != "Members") {
+    cout << "Invalid mode" << endl;
+    return;
+    }
+
+    cin.ignore();
+    string filepath = promptForFilename();
+    fileDataIO.open(filepath);
+
+    if (!fileDataIO.is_open()){
+      
+        cout << "Unable to open file. Please provide a valid filepath." << endl;
+    }
+
+    if(szMode == "Customers"){
+        cout<<"Saving to Customers file."<<endl;
+        // fileDataIO<<myTheater.customersArr[i].szName<<" ";
+       for(int i=0; i<myTheater.iCurrentCustomers; i++)
+        {
+            temp = myTheater.customersArr[i].szMovie;
+            for(int j=0; j<temp.size(); j++){
+             
+               if(temp.at(j)== ' '){
+                   temp.at(j) = '_';
+            }
+            }
+
+        fileDataIO<<myTheater.customersArr[i].szName<<" ";
+        fileDataIO<<temp<<" ";
+        fileDataIO<<myTheater.customersArr[i].iNumberTickets<<" ";
+        fileDataIO<<myTheater.customersArr[i].dPurchaseCost<<" ";
+        fileDataIO<<myTheater.customersArr[i].bBoughtMembership<<endl;
+
+        }
+     }
+    
+    else if(szMode == "Members"){
+        for(int i=0; i<myTheater.iCurrentMembers; i++){
+           fileDataIO<<myTheater.membersArr[i].szName<<"\n";
+           cout<<"Storing Members data in the file";
+    }
+    }
+
+}
+
+/*********************************************************************
+void loadData(Theater& myTheater, fstream& fileDataIO, string szMode);
+Purpose:
+    Function to load data from the theater structure to a file
+Parameters:
+    I/O Theater& myTheater          Populated Theater info
+    I/O fstream fileDataIO          File stream used to read file
+    I   string szMode               What data to delete
+Return Value:
+    -
+Notes:
+    -
+*********************************************************************/
+void loadData(Theater& myTheater, fstream& fileDataIO, string szMode)
+{
+
+    string filepathload =  promptForFilename();
+
+    if (szMode != "Customers" && szMode != "Members") {
+    cout << "Invalid mode" << endl;
+    return;
+    }
+
+    fileDataIO.open(filepathload);
+
+    if (fileDataIO.is_open()) {
+
+    if(szMode == "Customers"){
+
+        cout<<"Loading from Customers file."<<endl;
+       int count = 0;
+       while(!fileDataIO.eof())
+        {
+         fileDataIO >> myTheater.customersArr[count].szName;
+         fileDataIO >> myTheater.customersArr[count].szMovie;
+         fileDataIO >> myTheater.customersArr[count].iNumberTickets;
+         fileDataIO >> myTheater.customersArr[count].dPurchaseCost;
+         fileDataIO >> myTheater.customersArr[count].bBoughtMembership;
+         count++;
+        }
+        myTheater.iCurrentCustomers = count+1;
+    }
+
+       else if (szMode == "Members"){
+           int count =0;
+           while(!fileDataIO.eof())
+           {
+        cout<<"Loading from Members file."<<endl;
+        while(!fileDataIO.eof()){
+          fileDataIO<<myTheater.membersArr[count].szName<<" ";
+        } 
+    }
+    }
+    }
+        else {
+        cout << "Unable to open file. Please provide a valid filepath." << endl;
+        }
+
+
+
+}
+
+/*********************************************************************
+void clearData(Theater& myTheater, string szMode);
+Purpose:
+    Function to delete data from the theater structure
+Parameters:
+    I/O Theater& myTheater          Populated Theater info
+    I   string szMode               What data to delete
+Return Value:
+    -
+Notes:
+    Deleted theater customers are replaced with empty customers
+*********************************************************************/
+void clearData(Theater& myTheater, string szMode)
+{
+
+    if (szMode != "Customers" && szMode != "Members") {
+      cout << "Invalid mode" << endl;
+    return;
+    }
+
+    if(szMode == "Customers"){
+        for(int i=0; i<myTheater.iCurrentCustomers; i++){
+         myTheater.customersArr[i].szName = "";
+         myTheater.customersArr[i].szMovie = "";
+         myTheater.customersArr[i].iNumberTickets = 0 ;
+         myTheater.customersArr[i].dPurchaseCost = 0;
+         myTheater.customersArr[i].bBoughtMembership = false;
+        
+         if(i<3){
+          myTheater.roomsArr[i].iParkingAvailable = myTheater.roomsArr[i].iParkingCapacity;   
+         }
+        }
+        myTheater.iCurrentCustomers = 0;
+        cout<<"Customers data cleared.\n";
+    }
+
+    else if (szMode == "Members"){
+        for(int i=0; i<myTheater.iCurrentMembers; i++){
+           myTheater.membersArr[i].szName = "";
+        }
+         myTheater.iCurrentMembers = 0;
+    cout<<"Members data cleared.";
+    }
+    }
+
+
+    
